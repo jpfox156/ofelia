@@ -11,8 +11,13 @@ import (
 
 type ComposeJob struct {
 	BareJob `mapstructure:",squash"`
+	Project string `gcfg:"project" mapstructure:"project" hash:"true"`
+	Dir     string `default:"./" gcfg:"dir" mapstructure:"dir" hash:"true"`
 	File    string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
+	Env_file string `default:".env" gcfg:"env_file" mapstructure:"env_file" hash:"true"`
+	Environment []string `mapstructure:"environment" hash:"true"`
 	Service string `gcfg:"service" mapstructure:"service" hash:"true"`
+	Profile string `gcfg:"profile" mapstructure:"profile" hash:"true"`	
 	Exec    bool   `default:"false" gcfg:"exec" mapstructure:"exec" hash:"true"`
 }
 
@@ -33,8 +38,14 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	// Validate inputs to prevent command injection
 	validator := config.NewCommandValidator()
 
-	// Validate file path
+	// Validate file paths
+	if err := validator.ValidateFilePath(j.Dir); err != nil {
+		return nil, fmt.Errorf("invalid compose file path: %w", err)
+	}
 	if err := validator.ValidateFilePath(j.File); err != nil {
+		return nil, fmt.Errorf("invalid compose file path: %w", err)
+	}
+	if err := validator.ValidateFilePath(j.Env_file); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
 	}
 
@@ -43,10 +54,23 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("invalid service name: %w", err)
 	}
 
+	//Sanitize other fields
+	sanitizer := config.NewSanitizer()
+	j.Project = SanitizeString(j.Project, 256)
+	j.Profile = SanitizeString(j.Profile, 256)
+	
 	// Build docker compose command
 	var cmdArgs []string
-	cmdArgs = append(cmdArgs, "docker", "compose", "-f", j.File)
+	cmdArgs = append(cmdArgs, "docker", "compose", "--project-directory", j.Dir, "--file", j.File, "--env-file", j.Env_file)
 
+	if j.Project {
+		cmdArgs = append(cmdArgs, "--project-name", j.Project)
+	}
+
+	if j.Profile {
+		cmdArgs = append(cmdArgs, "--profile", j.Profile)
+	}
+	
 	if j.Exec {
 		cmdArgs = append(cmdArgs, "exec", j.Service)
 	} else {
@@ -72,5 +96,8 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		Args:   cmdArgs,
 		Stdout: ctx.Execution.OutputStream,
 		Stderr: ctx.Execution.ErrorStream,
+		// add custom env variables to the existing ones
+		Env: append(os.Environ(), j.Environment...),
+		Dir: j.Dir,
 	}, nil
 }
