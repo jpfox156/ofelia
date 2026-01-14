@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/gobs/args"
@@ -56,8 +57,8 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 
 	//Sanitize other fields
 	sanitizer := config.NewSanitizer()
-	j.Project = sanitizer.SanitizeString(j.Project, 256)
-	j.Profile = sanitizer.SanitizeString(j.Profile, 256)
+	j.Project, err := sanitizer.SanitizeString(j.Project, 256)
+	j.Profile, err := sanitizer.SanitizeString(j.Profile, 256)
 	
 	// Build docker compose command
 	var cmdArgs []string
