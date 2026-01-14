@@ -56,8 +56,8 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 
 	//Sanitize other fields
 	sanitizer := config.NewSanitizer()
-	j.Project = SanitizeString(j.Project, 256)
-	j.Profile = SanitizeString(j.Profile, 256)
+	j.Project = sanitizer.SanitizeString(j.Project, 256)
+	j.Profile = sanitizer.SanitizeString(j.Profile, 256)
 	
 	// Build docker compose command
 	var cmdArgs []string
