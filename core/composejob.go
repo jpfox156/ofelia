@@ -64,11 +64,11 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	var cmdArgs []string
 	cmdArgs = append(cmdArgs, "docker", "compose", "--project-directory", j.Dir, "--file", j.File, "--env-file", j.Env_file)
 
-	if j.Project {
+	if j.Project != "" {
 		cmdArgs = append(cmdArgs, "--project-name", j.Project)
 	}
 
-	if j.Profile {
+	if j.Profile != "" {
 		cmdArgs = append(cmdArgs, "--profile", j.Profile)
 	}
 	
