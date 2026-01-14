@@ -14,8 +14,8 @@ type ComposeJob struct {
 	BareJob `mapstructure:",squash"`
 	Project string `gcfg:"project" mapstructure:"project" hash:"true"`
 	Dir     string `default:"./" gcfg:"dir" mapstructure:"dir" hash:"true"`
-	File    string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
-	Env_file string `default:".env" gcfg:"env_file" mapstructure:"env_file" hash:"true"`
+	File    []string `gcfg:"file" mapstructure:"file" hash:"true"`
+	Env_file string `gcfg:"env_file" mapstructure:"env_file" hash:"true"`
 	Environment []string `mapstructure:"environment" hash:"true"`
 	Service string `gcfg:"service" mapstructure:"service" hash:"true"`
 	Profile string `gcfg:"profile" mapstructure:"profile" hash:"true"`	
@@ -43,9 +43,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	if err := validator.ValidateFilePath(j.Dir); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
 	}
-	if err := validator.ValidateFilePath(j.File); err != nil {
-		return nil, fmt.Errorf("invalid compose file path: %w", err)
-	}
+
 	if err := validator.ValidateFilePath(j.Env_file); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
 	}
@@ -62,7 +60,18 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	
 	// Build docker compose command
 	var cmdArgs []string
-	cmdArgs = append(cmdArgs, "docker", "compose", "--project-directory", j.Dir, "--file", j.File, "--env-file", j.Env_file)
+	cmdArgs = append(cmdArgs, "docker", "compose", "--project-directory", j.Dir )
+	
+	for i, File := range j.File {
+		if err := validator.ValidateFilePath(File); err != nil {
+			return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}
+		cmdArgs = append(cmdArgs, "-f", File )
+	}, 
+
+	if j.Env_file != "" {
+		cmdArgs = append(cmdArgs, "--env-file", j.Env_file) 
+	}
 
 	if j.Project != "" {
 		cmdArgs = append(cmdArgs, "--project-name", j.Project)
