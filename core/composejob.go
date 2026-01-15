@@ -13,10 +13,10 @@ import (
 type ComposeJob struct {
 	BareJob `mapstructure:",squash"`
 	Project string `gcfg:"project" mapstructure:"project" hash:"true"`
-	Dir     string `default:"./" gcfg:"dir" mapstructure:"dir" hash:"true"`
+	Dir     string `gcfg:"dir" mapstructure:"dir" hash:"true"`
 	File    []string `gcfg:"file" mapstructure:"file" hash:"true"`
 	Env_file string `gcfg:"env_file" mapstructure:"env_file" hash:"true"`
-	Environment []string `mapstructure:"environment" hash:"true"`
+	Environment []string `gcfg:"environment" mapstructure:"environment" hash:"true"`
 	Service string `gcfg:"service" mapstructure:"service" hash:"true"`
 	Profile string `gcfg:"profile" mapstructure:"profile" hash:"true"`	
 	Exec    bool   `default:"false" gcfg:"exec" mapstructure:"exec" hash:"true"`
