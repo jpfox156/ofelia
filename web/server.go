@@ -451,8 +451,8 @@ func (s *Server) jobFromRequest(req *jobRequest) (core.Job, error) {
 	case "compose":
 		// Validate compose job parameters
 		validator := config.NewCommandValidator()
-		if req.File != "" {
-			if err := validator.ValidateFilePath(req.File); err != nil {
+		for _, File := range req.File {
+			if err := validator.ValidateFilePath(File); err != nil {
 				return nil, fmt.Errorf("invalid compose file path: %w", err)
 			}
 		}
@@ -470,7 +470,7 @@ func (s *Server) jobFromRequest(req *jobRequest) (core.Job, error) {
 		j.Schedule = req.Schedule
 		j.Command = req.Command
 		j.Dir = req.Dir
-		j.File[0] = req.File
+		j.File = req.File
 		j.Env_file = req.Env_file
 		j.Environment = req.Environment
 		j.Service = req.Service
