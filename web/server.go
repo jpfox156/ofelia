@@ -331,7 +331,10 @@ type jobRequest struct {
 	Command   string `json:"command,omitempty"`
 	Image     string `json:"image,omitempty"`
 	Container string `json:"container,omitempty"`
-	File      string `json:"file,omitempty"`
+	Dir       string `json:"dir,omitempty"`
+	File      []string `json:"file,omitempty"`
+	Env_file  string `json:"env_file,omitempty"`
+	Environment []string `json:"environment,omitempty"`
 	Service   string `json:"service,omitempty"`
 	ExecFlag  bool   `json:"exec,omitempty"`
 }
@@ -466,7 +469,10 @@ func (s *Server) jobFromRequest(req *jobRequest) (core.Job, error) {
 		j.Name = req.Name
 		j.Schedule = req.Schedule
 		j.Command = req.Command
-		j.File = req.File
+		j.Dir = req.Dir
+		j.File[0] = req.File
+		j.Env_file = req.Env_file
+		j.Environment = req.Environment
 		j.Service = req.Service
 		j.Exec = req.ExecFlag
 		return j, nil
