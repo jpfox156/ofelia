@@ -58,7 +58,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, "--project-directory", j.Dir )
 	}
 	
-	for i, File := range j.File {
+	for _, File := range j.File {
 		// Validate file path
 		if err := validator.ValidateFilePath(File); err != nil {
 			return nil, fmt.Errorf("invalid compose file path: %w", err)
