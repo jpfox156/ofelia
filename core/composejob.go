@@ -38,46 +38,49 @@ func (j *ComposeJob) Run(ctx *Context) error {
 func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	// Validate inputs to prevent command injection
 	validator := config.NewCommandValidator()
-
-	// Validate file paths
-	if err := validator.ValidateFilePath(j.Dir); err != nil {
-		return nil, fmt.Errorf("invalid compose file path: %w", err)
-	}
-
-	if err := validator.ValidateFilePath(j.Env_file); err != nil {
-		return nil, fmt.Errorf("invalid compose file path: %w", err)
-	}
+	//Sanitize inputs which don't posssess a defined validation
+	sanitizer := config.NewSanitizer()
 
 	// Validate service name
 	if err := validator.ValidateServiceName(j.Service); err != nil {
 		return nil, fmt.Errorf("invalid service name: %w", err)
 	}
-
-	//Sanitize other fields
-	sanitizer := config.NewSanitizer()
-	j.Project, _ = sanitizer.SanitizeString(j.Project, 256)
-	j.Profile, _ = sanitizer.SanitizeString(j.Profile, 256)
 	
 	// Build docker compose command
 	var cmdArgs []string
-	cmdArgs = append(cmdArgs, "docker", "compose", "--project-directory", j.Dir )
+	cmdArgs = append(cmdArgs, "docker", "compose" )
+
+	if j.Dir != "" {
+		// Validate directory path
+		if err := validator.ValidateFilePath(j.Dir); err != nil {
+			return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}	
+		cmdArgs = append(cmdArgs, "--project-directory", j.Dir )
+	}
 	
 	for i, File := range j.File {
+		// Validate file path
 		if err := validator.ValidateFilePath(File); err != nil {
 			return nil, fmt.Errorf("invalid compose file path: %w", err)
 		}
 		cmdArgs = append(cmdArgs, "-f", File )
-	}, 
+	}
 
 	if j.Env_file != "" {
+		// Validate file path
+		if err := validator.ValidateFilePath(j.Env_file); err != nil {
+		return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}
 		cmdArgs = append(cmdArgs, "--env-file", j.Env_file) 
 	}
 
 	if j.Project != "" {
+		j.Project, _ = sanitizer.SanitizeString(j.Project, 256)
 		cmdArgs = append(cmdArgs, "--project-name", j.Project)
 	}
 
 	if j.Profile != "" {
+		j.Profile, _ = sanitizer.SanitizeString(j.Profile, 256)
 		cmdArgs = append(cmdArgs, "--profile", j.Profile)
 	}
 	
