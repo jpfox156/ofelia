@@ -14,9 +14,13 @@ import (
 
 type ComposeJob struct {
 	BareJob `mapstructure:",squash"`
-	File    string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
+	File    []string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
 	Service string `gcfg:"service" mapstructure:"service" hash:"true"`
 	Exec    bool   `default:"false" gcfg:"exec" mapstructure:"exec" hash:"true"`
+	Dir     string `gcfg:"dir" mapstructure:"dir" hash:"true"`
+	Env_file string `gcfg:"env_file" mapstructure:"env_file" hash:"true"`
+	Environment []string `gcfg:"environment" mapstructure:"environment" hash:"true"`
+	Project string `gcfg:"project" mapstructure:"project" hash:"true"`
 }
 
 func NewComposeJob() *ComposeJob { return &ComposeJob{} }
@@ -35,21 +39,55 @@ func (j *ComposeJob) Run(ctx *Context) error {
 func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	// Validate inputs to prevent command injection
 	validator := config.NewCommandValidator()
+	//Sanitize inputs which don't posssess a defined validator
+	sanitizer := config.NewSanitizer()
 
-	// Validate file path
-	if err := validator.ValidateFilePath(j.File); err != nil {
+	// Build docker compose command
+	var cmdArgs []string
+	cmdArgs = append(cmdArgs, "docker", "compose" )
+	
+	// Validate directory path (if provided)
+	if j.Dir != "" {
+		// Validate directory path
+		if err := validator.ValidateFilePath(j.Dir); err != nil {
+			return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}	
+		cmdArgs = append(cmdArgs, "--project-directory", j.Dir )
+	}
+	
+	// Validate file path(s)
+	for _, File := range j.File {
+		if err := validator.ValidateFilePath(File); err != nil {
+			return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}
+		cmdArgs = append(cmdArgs, "-f", File )
+	}	
+
+	// Validate Environment file
+	if j.Env_file != "" {
+		// Validate file path
+		if err := validator.ValidateFilePath(j.Env_file); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
+		}
+		cmdArgs = append(cmdArgs, "--env-file", j.Env_file) 
 	}
 
+	//Sanitise Project name
+	if j.Project != "" {
+		j.Project, _ = sanitizer.SanitizeString(j.Project, 256)
+		cmdArgs = append(cmdArgs, "--project-name", j.Project)
+	}
+
+	//Sanitise Environment Variables
+	for _, Env := range j.Environment {
+		Env, _ = sanitizer.SanitizeString(Env, 256)
+		cmdArgs = append(cmdArgs, "-e", Env )
+	}
+	
 	// Validate service name
 	if err := validator.ValidateServiceName(j.Service); err != nil {
 		return nil, fmt.Errorf("invalid service name: %w", err)
 	}
-
-	// Build docker compose command
-	var cmdArgs []string
-	cmdArgs = append(cmdArgs, "docker", "compose", "-f", j.File)
-
 	if j.Exec {
 		cmdArgs = append(cmdArgs, "exec", j.Service)
 	} else {
@@ -75,5 +113,8 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		Args:   cmdArgs,
 		Stdout: ctx.Execution.OutputStream,
 		Stderr: ctx.Execution.ErrorStream,
+		// add custom env variables to the existing ones
+		Env: append(os.Environ(), j.Environment...),
+		Dir: j.Dir,
 	}, nil
 }
