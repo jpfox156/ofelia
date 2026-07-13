@@ -14,7 +14,7 @@ import (
 
 type ComposeJob struct {
 	BareJob `mapstructure:",squash"`
-	File    []string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
+	File    string `default:"compose.yml" gcfg:"file" mapstructure:"file" hash:"true"`
 	Service string `gcfg:"service" mapstructure:"service" hash:"true"`
 	Exec    bool   `default:"false" gcfg:"exec" mapstructure:"exec" hash:"true"`
 	Dir     string `gcfg:"dir" mapstructure:"dir" hash:"true"`
@@ -54,13 +54,11 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, "--project-directory", j.Dir )
 	}
 	
-	// Validate file path(s)
-	for _, File := range j.File {
-		if err := validator.ValidateFilePath(File); err != nil {
-			return nil, fmt.Errorf("invalid compose file path: %w", err)
-		}
-		cmdArgs = append(cmdArgs, "-f", File )
-	}	
+	// Validate file path
+	if err := validator.ValidateFilePath(j.File); err != nil {
+		return nil, fmt.Errorf("invalid compose file path: %w", err)
+	}
+	cmdArgs = append(cmdArgs, "-f", j.File )	
 
 	// Validate Environment file
 	if j.Env_file != "" {
@@ -107,7 +105,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		Stdout: ctx.Execution.OutputStream,
 		Stderr: ctx.Execution.ErrorStream,
 		// add custom env variables to the existing ones
-		Env: append(j.Environment...),
+		Env: j.Environment,
 		Dir: j.Dir,
 	}, nil
 }
