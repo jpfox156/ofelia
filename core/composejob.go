@@ -20,7 +20,6 @@ type ComposeJob struct {
 	Dir     string `gcfg:"dir" mapstructure:"dir" hash:"true"`
 	Env_file string `gcfg:"env_file" mapstructure:"env_file" hash:"true"`
 	Environment []string `gcfg:"environment" mapstructure:"environment" hash:"true"`
-	Project string `gcfg:"project" mapstructure:"project" hash:"true"`
 }
 
 func NewComposeJob() *ComposeJob { return &ComposeJob{} }
@@ -72,12 +71,6 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, "--env-file", j.Env_file) 
 	}
 
-	//Sanitise Project name
-	if j.Project != "" {
-		j.Project, _ = sanitizer.SanitizeString(j.Project, 256)
-		cmdArgs = append(cmdArgs, "--project-name", j.Project)
-	}
-
 	//Sanitise Environment Variables
 	for _, Env := range j.Environment {
 		Env, _ = sanitizer.SanitizeString(Env, 256)
@@ -114,7 +107,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		Stdout: ctx.Execution.OutputStream,
 		Stderr: ctx.Execution.ErrorStream,
 		// add custom env variables to the existing ones
-		Env: append(os.Environ(), j.Environment...),
+		Env: append(j.Environment...),
 		Dir: j.Dir,
 	}, nil
 }
