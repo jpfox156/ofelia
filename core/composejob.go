@@ -72,9 +72,9 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	}
 
 	//Sanitise Environment Variables
-	for _, Env := range j.Environment {
-		Env, _ = sanitizer.SanitizeString(Env, 256)
-		cmdArgs = append(cmdArgs, "-e", Env )
+	for i, Env := range j.Environment {
+		j.Environment[i], _ = sanitizer.SanitizeString(Env, 256)
+		cmdArgs = append(cmdArgs, "-e", j.Environment[i] )
 	}
 	
 	// Validate service name
