@@ -1,24 +1,16 @@
-# Binary selector stage — picks the correct pre-built binary for the target platform.
-# Docker automatically sets TARGETARCH and TARGETVARIANT during multi-platform builds.
-# All pre-built binaries must be in bin/ in the build context.
-FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS binary-selector
+FROM golang:alpine3.24 AS builder
 
-ARG TARGETARCH
-ARG TARGETVARIANT
+# hadolint ignore=DL3018
+RUN apk add --no-cache gcc musl-dev git
 
-COPY bin/ofelia-linux-* /tmp/
+WORKDIR ${GOPATH}/src/github.com/jpfox156/ofelia
 
-# Select binary matching the target platform.
-# For ARM, Docker buildx sets TARGETVARIANT to "v6", "v7", etc.
-# Pre-built binaries follow the naming: ofelia-linux-{386,amd64,arm64,armv6,armv7}
-RUN set -eux; \
-  case "${TARGETARCH}" in \
-    arm) BINARY="ofelia-linux-arm${TARGETVARIANT}" ;; \
-    386|amd64|arm64) BINARY="ofelia-linux-${TARGETARCH}" ;; \
-    *) echo "Unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
-  esac; \
-  cp "/tmp/${BINARY}" /usr/bin/ofelia; \
-  chmod +x /usr/bin/ofelia
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ${GOPATH}/src/github.com/jpfox156/ofelia
+
+RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /go/bin/ofelia .
 
 # Runtime stage
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
@@ -45,7 +37,7 @@ LABEL ofelia.service=true \
 # hadolint ignore=DL3018
 RUN apk add --no-cache ca-certificates tini tzdata
 
-COPY --from=binary-selector /usr/bin/ofelia /usr/bin/ofelia
+COPY --from=builder /usr/bin/ofelia /usr/bin/ofelia
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
   CMD pgrep ofelia >/dev/null || exit 1
