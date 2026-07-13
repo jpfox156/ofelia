@@ -99,7 +99,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("look path %q: %w", cmdArgs[0], err)
 	}
 
-	config.logger.Debug("prepared composejob", bin, fmt.Printf("%v", j.Environment) + cmdArgs) 
+	logger.Debug("prepared composejob", bin, fmt.Sprintf("%v", j.Environment) + cmdArgs) 
 
 	return &exec.Cmd{
 		Path:   bin,
