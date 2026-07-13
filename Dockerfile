@@ -37,7 +37,7 @@ LABEL ofelia.service=true \
 # hadolint ignore=DL3018
 RUN apk add --no-cache ca-certificates tini tzdata
 
-COPY --from=builder /usr/bin/ofelia /usr/bin/ofelia
+COPY --from=builder /go/bin/ofelia /usr/bin/ofelia
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 \
   CMD pgrep ofelia >/dev/null || exit 1
