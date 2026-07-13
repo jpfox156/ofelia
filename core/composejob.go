@@ -71,7 +71,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 
 	//Sanitise Environment Variables
 	for i, _ := range j.Environment {
-		j.Environment[i], _ = sanitizer.SanitizeString(Env, 256)
+		j.Environment[i], _ = sanitizer.SanitizeString(j.Environment[i], 256)
 		cmdArgs = append(cmdArgs, "--env", j.Environment[i] )
 	}
 	
