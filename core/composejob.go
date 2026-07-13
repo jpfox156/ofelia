@@ -55,9 +55,10 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	}
 	
 	// Validate file path
-	if err := validator.ValidateFilePath(File); err != nil {
+	if err := validator.ValidateFilePath(j.File); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
 	}
+	cmdArgs = append(cmdArgs, "-f", j.File )
 
 	// Validate Environment file
 	if j.Env_file != "" {
