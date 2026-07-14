@@ -6,7 +6,6 @@ package core
 import (
 	"fmt"
 	"os/exec"
-	"log/slog"
 
 	"github.com/gobs/args"
 
@@ -73,7 +72,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	//Sanitise Environment Variables
 	for i, Env := range j.Environment {
 		j.Environment[i], _ = sanitizer.SanitizeString(j.Environment[i], 256)
-		slog.Debug("sanitising environment variables", Env, j.Environment[i])
+		ctx.Debug("sanitising environment variables", Env, j.Environment[i])
 		cmdArgs = append(cmdArgs, "--env", j.Environment[i] )
 	}
 	
@@ -101,7 +100,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("look path %q: %w", cmdArgs[0], err)
 	}
 
-	slog.Debug("prepared composejob", bin, fmt.Sprintf("%v", j.Environment) + fmt.Sprintf("%v", cmdArgs)) 
+	ctx.Debug("prepared composejob", bin, fmt.Sprintf("%v", j.Environment) + fmt.Sprintf("%v", cmdArgs)) 
 
 	return &exec.Cmd{
 		Path:   bin,
