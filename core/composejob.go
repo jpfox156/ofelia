@@ -59,7 +59,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	if err := validator.ValidateFilePath(j.File); err != nil {
 		return nil, fmt.Errorf("invalid compose file path: %w", err)
 	}
-	cmdArgs = append(cmdArgs, "-f", j.File )
+	cmdArgs = append(cmdArgs, "--file", j.File )
 
 	// Validate Environment file
 	if j.Env_file != "" {
@@ -70,6 +70,12 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		cmdArgs = append(cmdArgs, "--env-file", j.Env_file) 
 	}
 
+	if j.Exec {
+		cmdArgs = append(cmdArgs, "exec")
+	} else {
+		cmdArgs = append(cmdArgs, "run", "--rm")
+	}
+	
 	//Sanitise Environment Variables
 	for i, Env := range j.Environment {
 		j.Environment[i], _ = sanitizer.SanitizeString(Env, 256)
@@ -81,11 +87,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	if err := validator.ValidateServiceName(j.Service); err != nil {
 		return nil, fmt.Errorf("invalid service name: %w", err)
 	}
-	if j.Exec {
-		cmdArgs = append(cmdArgs, "exec", j.Service)
-	} else {
-		cmdArgs = append(cmdArgs, "run", "--rm", j.Service)
-	}
+	cmdArgs = append(cmdArgs, j.Service)
 
 	// Add command arguments if present
 	if j.Command != "" {
