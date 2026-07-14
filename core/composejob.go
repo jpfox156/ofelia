@@ -72,7 +72,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	//Sanitise Environment Variables
 	for i, Env := range j.Environment {
 		j.Environment[i], _ = sanitizer.SanitizeString(j.Environment[i], 256)
-		ctx.Debug("sanitising environment variables", Env, j.Environment[i])
+		ctx.Logger.Debug("sanitising environment variables", Env, j.Environment[i])
 		cmdArgs = append(cmdArgs, "--env", j.Environment[i] )
 	}
 	
@@ -100,7 +100,7 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("look path %q: %w", cmdArgs[0], err)
 	}
 
-	ctx.Debug("prepared composejob", bin, fmt.Sprintf("%v", j.Environment) + fmt.Sprintf("%v", cmdArgs)) 
+	ctx.Logger.Debug("prepared composejob", bin, fmt.Sprintf("%v", j.Environment) + fmt.Sprintf("%v", cmdArgs)) 
 
 	return &exec.Cmd{
 		Path:   bin,
