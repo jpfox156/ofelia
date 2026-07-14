@@ -71,9 +71,9 @@ func (j *ComposeJob) buildCommand(ctx *Context) (*exec.Cmd, error) {
 	}
 
 	//Sanitise Environment Variables
-	for i, _ := range j.Environment {
-		slog.Debug("sanitising environment variables", j.Environment, fmt.Sprintf("%v", sanitizer.SanitizeString(j.Environment[i], 256)))
+	for i, Env := range j.Environment {
 		j.Environment[i], _ = sanitizer.SanitizeString(j.Environment[i], 256)
+		slog.Debug("sanitising environment variables", Env, j.Environment[i])
 		cmdArgs = append(cmdArgs, "--env", j.Environment[i] )
 	}
 	
